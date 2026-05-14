@@ -1,0 +1,71 @@
+run:
+  name: "egy_ar_demo"
+  output_root: "outputs"
+
+generation:
+  target_count: 120
+  seed: 13
+  min_words: 3
+  max_words: 18
+  allow_arabizi: false
+  allow_latin_tokens: false
+  domain_weights:
+    daily_life: 1.0
+    transport: 1.0
+    shopping: 1.0
+    customer_support: 1.0
+    family_social: 1.0
+    work_admin: 1.0
+    home_services: 1.0
+    payments: 1.0
+
+normalization:
+  remove_diacritics: true
+  normalize_alef: true
+  normalize_alef_maqsura: true
+  strip_tatweel: true
+  normalize_whitespace: true
+  normalize_punctuation_spacing: true
+
+tts:
+  engine: "coqui_xtts"
+  model_name: "tts_models/multilingual/multi-dataset/xtts_v2"
+  language: "ar"
+  device: "auto"
+  split_sentences: false
+  batch_size: 8
+  max_attempts: 2
+  overwrite_audio: false
+  pause_between_batches_ms: 0
+  speaker_selection: "round_robin"
+  speaker_profiles:
+    - id: "cairo_female_01"
+      reference_wavs:
+        - "data/reference_speakers/cairo_female_01/ref2.wav"
+    - id: "cairo_male_01"
+      reference_wavs:
+        - "data/reference_speakers/cairo_male_01/ref1.wav"
+
+review:
+  host: "127.0.0.1"
+  port: 7861
+  page_size: 12
+
+export:
+  dataset_name: "egy_ar_stt_ready_v1"
+  format: "nemo_jsonl"
+  copy_audio: false
+  relative_audio_paths: true
+  include_raw_text: true
+  include_quality_metadata: true
+  re_normalize_approved_text: true
+
+quality:
+  min_duration_sec: 0.7
+  max_duration_sec: 18.0
+  min_chars_per_sec: 3.0
+  max_chars_per_sec: 22.0
+  silence_threshold: 0.015
+  silence_ratio_warn: 0.35
+  low_rms_warn: 0.01
+  clipping_peak_warn: 0.995

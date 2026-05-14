@@ -1,0 +1,9 @@
+numpy<2.0,>=1.26
+PyYAML>=6.0
+pydantic>=2.7
+fastapi>=0.115
+uvicorn>=0.30
+jinja2>=3.1
+aiofiles>=23.2
+coqui-tts>=0.27.5
+transformers<5.0,>=4.57

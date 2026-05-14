@@ -1,0 +1,160 @@
+# Egyptian Arabic Synthetic Speech Pipeline
+
+This project builds a synthetic Egyptian Arabic speech dataset for STT fine-tuning with four stages:
+
+1. Generate Egyptian Arabic prompt text.
+2. Synthesize audio with Coqui XTTS.
+3. Review `(text, audio)` pairs in a local web UI.
+4. Export approved samples as a training-ready manifest.
+
+The design assumes a practical constraint: XTTS supports Arabic, but it is not Egyptian-dialect-specific by itself. To push it toward Egyptian Arabic, the pipeline uses:
+
+- Egyptian colloquial prompt templates instead of MSA-heavy text.
+- Arabic-script borrowed words instead of Latin-script Arabizi.
+- Reference speakers that should be Egyptian Arabic voices.
+- Review + approval before export.
+- Quality flags so synthetic failures are easier to spot.
+
+## Why the text is shaped this way
+
+Egyptian Arabic creates STT problems that synthetic pipelines often hide:
+
+- Orthography is not standardized.
+- TTS can read digits, dates, and code-switching inconsistently.
+- MSA spelling can drift away from actual spoken Egyptian realizations.
+- A single synthetic speaker can make the downstream STT overfit one voice and one acoustic style.
+
+To reduce those risks, this pipeline:
+
+- Generates spoken-style Egyptian Arabic in Arabic script.
+- Expands numeric content into words before TTS instead of feeding raw digits.
+- Stores both `prompt_text` and `normalized_text`.
+- Lets reviewers override the final exported transcript with `approved_text`.
+- Supports multiple speaker profiles and round-robin or weighted sampling.
+
+## Layout
+
+- `configs/pipeline.example.yaml`: externalized configuration
+- `src/egy_tts_pipeline/`: pipeline package
+- `data/reference_speakers/`: place Egyptian reference WAVs here
+- `outputs/<run_name>/`: database, logs, manifests, audio, exports
+
+## Install
+
+The current maintained PyPI package is `coqui-tts`. Install PyTorch first, then the project:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install torch torchaudio
+python -m pip install -e .
+```
+
+Note:
+
+- A project-local virtual environment is strongly recommended because Coqui/XTTS can pull dependency versions that clash with other ML tooling in a shared Python install.
+- XTTS currently behaves better with `transformers 4.x`. The project pins `transformers>=4.57,<5.0` because the unconstrained `5.x` line can break XTTS imports.
+
+## Configure
+
+1. Copy `configs/pipeline.example.yaml` if you want a custom run config.
+2. Put clean Egyptian Arabic reference audio under `data/reference_speakers/...`.
+3. Update speaker paths in the YAML.
+
+Reference audio tips:
+
+- 6-30 seconds per file is usually enough for XTTS cloning.
+- Use clean speech with little background noise.
+- Keep each speaker in a dedicated folder.
+- Prefer 2-5 clips per speaker if available.
+
+## Run
+
+Generate prompts:
+
+```powershell
+python -m egy_tts_pipeline --config configs/pipeline.example.yaml generate-prompts
+```
+
+Synthesize all pending prompts:
+
+```powershell
+python -m egy_tts_pipeline --config configs/pipeline.example.yaml synthesize
+```
+
+Launch review UI:
+
+```powershell
+python -m egy_tts_pipeline --config configs/pipeline.example.yaml serve-review
+```
+
+Export approved samples:
+
+```powershell
+python -m egy_tts_pipeline --config configs/pipeline.example.yaml export
+```
+
+Quick status:
+
+```powershell
+python -m egy_tts_pipeline --config configs/pipeline.example.yaml status
+```
+
+Run prompt generation + synthesis in one shot:
+
+```powershell
+python -m egy_tts_pipeline --config configs/pipeline.example.yaml run-all
+```
+
+## Review UI
+
+The review UI shows synthesized samples with:
+
+- audio playback
+- generated prompt text
+- normalized/exportable text
+- speaker ID
+- quality flags
+- editable approved transcript
+- approve / reject / needs-fix actions
+
+This gives you a manual gate before synthetic samples reach the training set.
+
+## Output format
+
+Exports are written as:
+
+- `manifest.jsonl`
+- `metadata.csv`
+- `summary.json`
+
+The JSONL format is intentionally STT-friendly:
+
+```json
+{
+  "audio_filepath": "audio/sample.wav",
+  "text": "عايز اتنين كشري من السوبر ماركت",
+  "duration": 2.84,
+  "speaker_id": "cairo_female_01",
+  "domain": "shopping",
+  "dialect": "arz",
+  "synthetic": true
+}
+```
+
+That structure is easy to adapt to NeMo-style training, Whisper-style preprocessing, or custom fine-tuning scripts.
+
+## Observability and resumability
+
+- SQLite database tracks prompt, synthesis, and review state.
+- `logs/pipeline.log` captures stage activity.
+- `manifests/*.jsonl` capture stage snapshots.
+- Synthesis resumes from unfinished rows.
+- In-flight rows are reset from `running` back to `pending` on restart.
+
+## Caveats
+
+- Synthetic audio can over-regularize pronunciation and prosody.
+- XTTS may still produce non-Egyptian Arabic realizations for some prompts.
+- Latin-script code-switching is intentionally avoided by default because it often destabilizes Arabic TTS output.
+- Exporting only approved samples is strongly recommended for any real STT fine-tune.

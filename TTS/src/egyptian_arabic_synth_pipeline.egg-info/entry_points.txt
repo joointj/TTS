@@ -1,0 +1,2 @@
+[console_scripts]
+egy-tts-pipeline = egy_tts_pipeline.cli:main

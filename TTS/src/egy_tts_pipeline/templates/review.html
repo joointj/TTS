@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ run_name }} Review</title>
+  <style>
+    :root {
+      --bg: #f5efe5;
+      --panel: #fffaf3;
+      --ink: #1f2933;
+      --muted: #6b7280;
+      --line: #dccfb9;
+      --accent: #0f766e;
+      --accent-2: #b45309;
+      --danger: #b91c1c;
+      --ok: #166534;
+      --shadow: 0 18px 40px rgba(52, 35, 14, 0.08);
+      --font-sans: "Segoe UI", "Tahoma", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(180, 83, 9, 0.10), transparent 28%),
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 22%),
+        var(--bg);
+    }
+
+    header {
+      padding: 24px 28px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      backdrop-filter: blur(10px);
+      background: rgba(245, 239, 229, 0.92);
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0.02em;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .toolbar, .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .toolbar {
+      margin-bottom: 12px;
+    }
+
+    .toolbar label, .stats .pill {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: var(--shadow);
+    }
+
+    select, input[type="checkbox"] {
+      margin-left: 8px;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 24px 48px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card.approved { border-color: rgba(22, 101, 52, 0.45); }
+    .card.rejected { border-color: rgba(185, 28, 28, 0.45); }
+    .card.needs_fix { border-color: rgba(180, 83, 9, 0.55); }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .arabic {
+      direction: rtl;
+      font-size: 23px;
+      line-height: 1.7;
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 16px;
+      padding: 14px;
+      border: 1px solid rgba(220, 207, 185, 0.85);
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font: inherit;
+      resize: vertical;
+      min-height: 86px;
+      background: #fffdf9;
+    }
+
+    .flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .flag {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: rgba(180, 83, 9, 0.10);
+      border: 1px solid rgba(180, 83, 9, 0.20);
+      color: #8a4b05;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      color: white;
+    }
+
+    .approve { background: var(--ok); }
+    .reject { background: var(--danger); }
+    .needs-fix { background: var(--accent-2); }
+    .reset { background: var(--accent); }
+
+    .pager {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 24px 0 0;
+    }
+
+    .pager button {
+      background: #334155;
+    }
+
+    .empty {
+      padding: 36px;
+      text-align: center;
+      color: var(--muted);
+      background: var(--panel);
+      border-radius: 22px;
+      border: 1px dashed var(--line);
+    }
+
+    audio {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Review Synthetic Egyptian Arabic Samples</h1>
+    <div class="sub">Listen, compare, edit the final transcript if needed, and approve only clean pairs.</div>
+    <div class="toolbar">
+      <label>
+        Review status
+        <select id="review-status">
+          <option value="pending">pending</option>
+          <option value="approved">approved</option>
+          <option value="rejected">rejected</option>
+          <option value="needs_fix">needs_fix</option>
+          <option value="">all complete</option>
+        </select>
+      </label>
+      <label>
+        Flagged only
+        <input type="checkbox" id="flagged-only">
+      </label>
+    </div>
+    <div id="stats" class="stats"></div>
+  </header>
+
+  <main>
+    <section id="samples" class="grid"></section>
+    <div class="pager">
+      <button type="button" id="prev-page">Previous</button>
+      <button type="button" id="next-page">Next</button>
+    </div>
+  </main>
+
+  <script>
+    const pageSize = {{ page_size }};
+    let offset = 0;
+
+    async function fetchStats() {
+      const response = await fetch("/api/stats");
+      const stats = await response.json();
+      const orderedKeys = [
+        "total",
+        "ready_for_review",
+        "synthesis_pending",
+        "synthesis_complete",
+        "synthesis_failed",
+        "review_pending",
+        "review_approved",
+        "review_rejected",
+        "review_needs_fix"
+      ];
+      document.getElementById("stats").innerHTML = orderedKeys
+        .filter(key => key in stats)
+        .map(key => `<div class="pill"><strong>${key}</strong>: ${stats[key]}</div>`)
+        .join("");
+    }
+
+    function cardHtml(sample) {
+      const flags = sample.quality_flags.length
+        ? sample.quality_flags.map(flag => `<span class="flag">${flag}</span>`).join("")
+        : `<span class="flag">no flags</span>`;
+      const approvedText = sample.approved_text || sample.normalized_text || sample.prompt_text;
+      const notes = sample.review_notes || "";
+
+      return `
+        <article class="card ${sample.review_status}">
+          <div class="meta">
+            <span><strong>${sample.id}</strong></span>
+            <span>${sample.domain} | ${sample.speaker_id || "unassigned"}</span>
+          </div>
+          <div class="arabic">${sample.prompt_text}</div>
+          <audio controls preload="none" src="${sample.audio_url}"></audio>
+          <div class="flags">${flags}</div>
+          <div class="field">
+            <label>Approved transcript</label>
+            <textarea id="approved-${sample.id}" dir="rtl">${approvedText}</textarea>
+          </div>
+          <div class="field">
+            <label>Review notes</label>
+            <textarea id="notes-${sample.id}">${notes}</textarea>
+          </div>
+          <div class="actions">
+            <button class="approve" onclick="submitReview('${sample.id}', 'approved')">Approve</button>
+            <button class="needs-fix" onclick="submitReview('${sample.id}', 'needs_fix')">Needs Fix</button>
+            <button class="reject" onclick="submitReview('${sample.id}', 'rejected')">Reject</button>
+            <button class="reset" onclick="submitReview('${sample.id}', 'pending')">Reset</button>
+          </div>
+        </article>
+      `;
+    }
+
+    async function loadSamples() {
+      const reviewStatus = document.getElementById("review-status").value;
+      const onlyFlagged = document.getElementById("flagged-only").checked;
+      const params = new URLSearchParams({
+        limit: String(pageSize),
+        offset: String(offset),
+        only_flagged: String(onlyFlagged),
+      });
+      if (reviewStatus !== "") {
+        params.set("review_status", reviewStatus);
+      }
+
+      const response = await fetch(`/api/samples?${params.toString()}`);
+      const payload = await response.json();
+      const root = document.getElementById("samples");
+      if (!payload.items.length) {
+        root.innerHTML = `<div class="empty">No samples matched the current filters.</div>`;
+        return;
+      }
+      root.innerHTML = payload.items.map(cardHtml).join("");
+    }
+
+    async function submitReview(sampleId, status) {
+      const approvedText = document.getElementById(`approved-${sampleId}`).value;
+      const reviewNotes = document.getElementById(`notes-${sampleId}`).value;
+      await fetch(`/api/review/${sampleId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          review_status: status,
+          approved_text: approvedText,
+          review_notes: reviewNotes
+        })
+      });
+      await Promise.all([fetchStats(), loadSamples()]);
+    }
+
+    document.getElementById("review-status").addEventListener("change", async () => {
+      offset = 0;
+      await loadSamples();
+    });
+
+    document.getElementById("flagged-only").addEventListener("change", async () => {
+      offset = 0;
+      await loadSamples();
+    });
+
+    document.getElementById("prev-page").addEventListener("click", async () => {
+      offset = Math.max(0, offset - pageSize);
+      await loadSamples();
+    });
+
+    document.getElementById("next-page").addEventListener("click", async () => {
+      offset += pageSize;
+      await loadSamples();
+    });
+
+    Promise.all([fetchStats(), loadSamples()]);
+  </script>
+</body>
+</html>
